@@ -19,11 +19,18 @@ public final class DomyaApiClient implements AutoCloseable {
     private final Logger logger;
     private final Messages messages;
     private final SyncConfig config;
+    private final DomyaPayloadFactory payloadFactory;
 
-    public DomyaApiClient(Logger logger, Messages messages, SyncConfig config) {
+    public DomyaApiClient(
+            Logger logger,
+            Messages messages,
+            SyncConfig config,
+            DomyaPayloadFactory payloadFactory
+    ) {
         this.logger = logger;
         this.messages = messages;
         this.config = config;
+        this.payloadFactory = payloadFactory;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(CONNECT_TIMEOUT)
                 .build();
@@ -35,11 +42,7 @@ public final class DomyaApiClient implements AutoCloseable {
             return CompletableFuture.completedFuture(new ApiResponse(0, ""));
         }
 
-        String payload = "{\"token\":" + JsonWriter.quote(config.getSecretToken())
-                + ",\"source\":\"spigot\""
-                + ",\"server_time\":" + JsonWriter.quote(TimeUtil.nowIso())
-                + ",\"players\":" + playersJson
-                + "}";
+        String payload = payloadFactory.syncPayload(config.getSecretToken(), playersJson);
         return postJson(config.getApiUrl(), payload, "sync");
     }
 
@@ -48,12 +51,7 @@ public final class DomyaApiClient implements AutoCloseable {
             return CompletableFuture.completedFuture(new ApiResponse(0, ""));
         }
 
-        String payload = "{\"token\":" + JsonWriter.quote(config.getSecretToken())
-                + ",\"code\":" + JsonWriter.quote(request.getCode())
-                + ",\"uuid\":" + JsonWriter.quote(request.getUuid())
-                + ",\"nickname\":" + JsonWriter.quote(request.getNickname())
-                + ",\"display_name\":" + JsonWriter.quote(request.getDisplayName())
-                + "}";
+        String payload = payloadFactory.linkPayload(config.getSecretToken(), request);
         return postJson(config.getLinkUrl(), payload, "link");
     }
 

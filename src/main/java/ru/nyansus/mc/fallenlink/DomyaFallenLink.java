@@ -56,9 +56,18 @@ public final class DomyaFallenLink extends JavaPlugin {
         if (messages == null) {
             messages = new Messages(this);
         }
-        apiClient = new DomyaApiClient(getLogger(), messages, syncConfig);
+        apiClient = new DomyaApiClient(getLogger(), messages, syncConfig, new DomyaPayloadFactory());
         PlayerSnapshotFactory snapshotFactory = new PlayerSnapshotFactory();
-        syncService = new SyncService(this, apiClient, snapshotFactory);
+        syncService = new SyncService(
+                this,
+                getServer(),
+                getLogger(),
+                syncConfig,
+                messages,
+                apiClient,
+                snapshotFactory,
+                new SnapshotJsonSerializer()
+        );
     }
 
     private void registerCommands() {

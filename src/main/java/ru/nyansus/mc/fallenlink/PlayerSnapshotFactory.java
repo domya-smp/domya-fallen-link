@@ -11,23 +11,20 @@ public final class PlayerSnapshotFactory {
     public PlayerSnapshot create(Player player, boolean online) {
         Location location = player.getLocation();
         World world = player.getWorld();
-        StringBuilder builder = new StringBuilder();
-        builder.append('{');
-        add(builder, "uuid", player.getUniqueId().toString()).append(',');
-        add(builder, "nickname", player.getName()).append(',');
-        add(builder, "display_name", safeDisplayName(player)).append(',');
-        add(builder, "is_online", online).append(',');
-        add(builder, "last_seen_at", TimeUtil.nowMysql()).append(',');
-        add(builder, "first_seen_at", TimeUtil.mysqlFromMillis(Math.max(0L, player.getFirstPlayed()))).append(',');
-        add(builder, "world", world == null ? "" : world.getName()).append(',');
-        appendLocation(builder, location);
-        builder.append(',');
-        appendStats(builder, player);
-        builder.append('}');
-        return new PlayerSnapshot(builder.toString());
+        return new PlayerSnapshot(
+                player.getUniqueId().toString(),
+                player.getName(),
+                safeDisplayName(player),
+                online,
+                TimeUtil.nowMysql(),
+                TimeUtil.mysqlFromMillis(Math.max(0L, player.getFirstPlayed())),
+                world == null ? "" : world.getName(),
+                position(location),
+                stats(player)
+        );
     }
 
-    public static String safeDisplayName(Player player) {
+    private String safeDisplayName(Player player) {
         try {
             return player.getDisplayName();
         } catch (RuntimeException e) {
@@ -35,32 +32,32 @@ public final class PlayerSnapshotFactory {
         }
     }
 
-    private void appendLocation(StringBuilder builder, Location location) {
-        builder.append("\"location\":{");
-        add(builder, "x", location == null ? 0.0D : round(location.getX())).append(',');
-        add(builder, "y", location == null ? 0.0D : round(location.getY())).append(',');
-        add(builder, "z", location == null ? 0.0D : round(location.getZ()));
-        builder.append('}');
+    private Position position(Location location) {
+        return new Position(
+                location == null ? 0.0D : round(location.getX()),
+                location == null ? 0.0D : round(location.getY()),
+                location == null ? 0.0D : round(location.getZ())
+        );
     }
 
-    private void appendStats(StringBuilder builder, Player player) {
-        builder.append("\"stats\":{");
-        add(builder, "playtime_seconds", ticksToSeconds(stat(player, "PLAY_ONE_MINUTE", "PLAY_TIME"))).append(',');
-        add(builder, "deaths", stat(player, "DEATHS")).append(',');
-        add(builder, "player_kills", stat(player, "PLAYER_KILLS")).append(',');
-        add(builder, "mob_kills", stat(player, "MOB_KILLS")).append(',');
-        add(builder, "jumps", stat(player, "JUMP")).append(',');
-        add(builder, "damage_dealt", stat(player, "DAMAGE_DEALT")).append(',');
-        add(builder, "damage_taken", stat(player, "DAMAGE_TAKEN")).append(',');
-        add(builder, "distance_cm", distanceCm(player)).append(',');
-        add(builder, "blocks_mined", minedBlocks(player)).append(',');
-        add(builder, "animals_bred", stat(player, "ANIMALS_BRED")).append(',');
-        add(builder, "fish_caught", stat(player, "FISH_CAUGHT")).append(',');
-        add(builder, "level", player.getLevel()).append(',');
-        add(builder, "exp", round(player.getExp())).append(',');
-        add(builder, "health", round(player.getHealth())).append(',');
-        add(builder, "food", player.getFoodLevel());
-        builder.append('}');
+    private PlayerStats stats(Player player) {
+        return new PlayerStats(
+                ticksToSeconds(stat(player, "PLAY_ONE_MINUTE", "PLAY_TIME")),
+                stat(player, "DEATHS"),
+                stat(player, "PLAYER_KILLS"),
+                stat(player, "MOB_KILLS"),
+                stat(player, "JUMP"),
+                stat(player, "DAMAGE_DEALT"),
+                stat(player, "DAMAGE_TAKEN"),
+                distanceCm(player),
+                minedBlocks(player),
+                stat(player, "ANIMALS_BRED"),
+                stat(player, "FISH_CAUGHT"),
+                player.getLevel(),
+                round(player.getExp()),
+                round(player.getHealth()),
+                player.getFoodLevel()
+        );
     }
 
     private int distanceCm(Player player) {
@@ -130,19 +127,4 @@ public final class PlayerSnapshotFactory {
         return Math.round(value * 100.0D) / 100.0D;
     }
 
-    private StringBuilder add(StringBuilder builder, String key, String value) {
-        return builder.append(JsonWriter.quote(key)).append(':').append(JsonWriter.quote(value));
-    }
-
-    private StringBuilder add(StringBuilder builder, String key, boolean value) {
-        return builder.append(JsonWriter.quote(key)).append(':').append(value ? "true" : "false");
-    }
-
-    private StringBuilder add(StringBuilder builder, String key, int value) {
-        return builder.append(JsonWriter.quote(key)).append(':').append(value);
-    }
-
-    private StringBuilder add(StringBuilder builder, String key, double value) {
-        return builder.append(JsonWriter.quote(key)).append(':').append(value);
-    }
 }

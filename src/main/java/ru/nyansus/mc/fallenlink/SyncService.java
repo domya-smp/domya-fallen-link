@@ -2,32 +2,54 @@ package ru.nyansus.mc.fallenlink;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
+import java.util.logging.Logger;
 
+import org.bukkit.Server;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 public final class SyncService {
 
-    private final DomyaFallenLink plugin;
+    private final Plugin plugin;
+    private final Server server;
+    private final Logger logger;
+    private final SyncConfig config;
+    private final Messages messages;
     private final DomyaApiClient apiClient;
     private final PlayerSnapshotFactory snapshotFactory;
+    private final SnapshotJsonSerializer snapshotJsonSerializer;
 
-    public SyncService(DomyaFallenLink plugin, DomyaApiClient apiClient, PlayerSnapshotFactory snapshotFactory) {
+    public SyncService(
+            Plugin plugin,
+            Server server,
+            Logger logger,
+            SyncConfig config,
+            Messages messages,
+            DomyaApiClient apiClient,
+            PlayerSnapshotFactory snapshotFactory,
+            SnapshotJsonSerializer snapshotJsonSerializer
+    ) {
         this.plugin = plugin;
+        this.server = server;
+        this.logger = logger;
+        this.config = config;
+        this.messages = messages;
         this.apiClient = apiClient;
         this.snapshotFactory = snapshotFactory;
+        this.snapshotJsonSerializer = snapshotJsonSerializer;
     }
 
     public void syncOnlinePlayers() {
-        Collection<? extends Player> players = plugin.getServer().getOnlinePlayers();
+        Collection<? extends Player> players = server.getOnlinePlayers();
         if (players.isEmpty()) {
-            if (plugin.getSyncConfig().isDebug()) {
-                plugin.getLogger().info(plugin.getMessages().get("log.no-online-players"));
+            if (config.isDebug()) {
+                logger.info(messages.get("log.no-online-players"));
             }
             return;
         }
 
         String playersJson = players.stream()
-                .map(player -> snapshotFactory.create(player, true).toJson())
+                .map(player -> snapshotJsonSerializer.serialize(snapshotFactory.create(player, true)))
                 .collect(Collectors.joining(",", "[", "]"));
         sendPlayers(playersJson);
     }
@@ -36,18 +58,17 @@ public final class SyncService {
         if (player == null) {
             return;
         }
-        String playersJson = "[" + snapshotFactory.create(player, online).toJson() + "]";
+        String playersJson = "[" + snapshotJsonSerializer.serialize(snapshotFactory.create(player, online)) + "]";
         sendPlayers(playersJson);
     }
 
     public void linkPlayer(Player player, String code) {
         PlayerLinkRequest request = PlayerLinkRequest.from(player, code);
-        apiClient.sendLinkRequest(request).thenAccept(response -> plugin.getServer().getScheduler()
+        apiClient.sendLinkRequest(request).thenAccept(response -> server.getScheduler()
                 .runTask(plugin, () -> handleLinkResponse(player, response)));
     }
 
     private void handleLinkResponse(Player player, ApiResponse response) {
-        Messages messages = plugin.getMessages();
         if (response.getStatusCode() == 0) {
             player.sendMessage(messages.get(player, "command.link-connection-error"));
             return;
@@ -60,8 +81,8 @@ public final class SyncService {
         }
 
         player.sendMessage(messages.get(player, "command.link-failed"));
-        if (plugin.getSyncConfig().isDebug()) {
-            plugin.getLogger().warning(messages.get("log.link-failed",
+        if (config.isDebug()) {
+            logger.warning(messages.get("log.link-failed",
                     "{status}", String.valueOf(response.getStatusCode()),
                     "{body}", response.getBody()));
         }

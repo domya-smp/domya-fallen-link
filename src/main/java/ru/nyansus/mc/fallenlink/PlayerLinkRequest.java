@@ -9,7 +9,7 @@ public final class PlayerLinkRequest {
     private final String nickname;
     private final String displayName;
 
-    private PlayerLinkRequest(String code, String uuid, String nickname, String displayName) {
+    public PlayerLinkRequest(String code, String uuid, String nickname, String displayName) {
         this.code = code;
         this.uuid = uuid;
         this.nickname = nickname;
@@ -21,7 +21,7 @@ public final class PlayerLinkRequest {
                 code,
                 player.getUniqueId().toString(),
                 player.getName(),
-                PlayerSnapshotFactory.safeDisplayName(player)
+                safeDisplayName(player)
         );
     }
 
@@ -39,5 +39,13 @@ public final class PlayerLinkRequest {
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    private static String safeDisplayName(Player player) {
+        try {
+            return player.getDisplayName();
+        } catch (RuntimeException e) {
+            return player.getName();
+        }
     }
 }

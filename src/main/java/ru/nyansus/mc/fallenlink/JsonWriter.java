@@ -2,7 +2,65 @@ package ru.nyansus.mc.fallenlink;
 
 public final class JsonWriter {
 
-    private JsonWriter() {
+    private final StringBuilder builder = new StringBuilder();
+    private boolean needsComma;
+
+    public void beginObject() {
+        beforeValue();
+        builder.append('{');
+        needsComma = false;
+    }
+
+    public void endObject() {
+        builder.append('}');
+        needsComma = true;
+    }
+
+    public void name(String name) {
+        beforeValue();
+        builder.append(quote(name)).append(':');
+        needsComma = false;
+    }
+
+    public void field(String name, String value) {
+        name(name);
+        builder.append(quote(value));
+        needsComma = true;
+    }
+
+    public void field(String name, boolean value) {
+        name(name);
+        builder.append(value ? "true" : "false");
+        needsComma = true;
+    }
+
+    public void field(String name, int value) {
+        name(name);
+        builder.append(value);
+        needsComma = true;
+    }
+
+    public void field(String name, double value) {
+        name(name);
+        builder.append(value);
+        needsComma = true;
+    }
+
+    public void rawField(String name, String json) {
+        name(name);
+        builder.append(json);
+        needsComma = true;
+    }
+
+    @Override
+    public String toString() {
+        return builder.toString();
+    }
+
+    private void beforeValue() {
+        if (needsComma) {
+            builder.append(',');
+        }
     }
 
     public static String quote(String value) {
