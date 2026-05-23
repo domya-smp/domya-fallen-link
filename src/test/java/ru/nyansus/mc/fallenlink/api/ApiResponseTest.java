@@ -1,4 +1,4 @@
-package ru.nyansus.mc.fallenlink;
+package ru.nyansus.mc.fallenlink.api;
 
 import org.junit.Assert;
 import org.junit.Test;

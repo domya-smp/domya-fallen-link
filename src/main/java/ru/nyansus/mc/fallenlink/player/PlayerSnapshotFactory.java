@@ -1,10 +1,16 @@
-package ru.nyansus.mc.fallenlink;
+package ru.nyansus.mc.fallenlink.player;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import ru.nyansus.mc.fallenlink.config.PrivacyPolicy;
+import ru.nyansus.mc.fallenlink.config.SyncConfig;
+import ru.nyansus.mc.fallenlink.model.PlayerSnapshot;
+import ru.nyansus.mc.fallenlink.model.PlayerStats;
+import ru.nyansus.mc.fallenlink.model.Position;
+import ru.nyansus.mc.fallenlink.util.TimeUtil;
 
 public final class PlayerSnapshotFactory {
 

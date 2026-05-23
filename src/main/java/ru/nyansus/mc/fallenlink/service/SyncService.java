@@ -1,4 +1,4 @@
-package ru.nyansus.mc.fallenlink;
+package ru.nyansus.mc.fallenlink.service;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -7,6 +7,14 @@ import java.util.logging.Logger;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+import ru.nyansus.mc.fallenlink.api.ApiResponse;
+import ru.nyansus.mc.fallenlink.api.DomyaApiClient;
+import ru.nyansus.mc.fallenlink.config.SyncConfig;
+import ru.nyansus.mc.fallenlink.message.Messages;
+import ru.nyansus.mc.fallenlink.model.PlayerLinkRequest;
+import ru.nyansus.mc.fallenlink.player.PlayerNameResolver;
+import ru.nyansus.mc.fallenlink.player.PlayerSnapshotFactory;
+import ru.nyansus.mc.fallenlink.serialization.SnapshotJsonSerializer;
 
 public final class SyncService {
 

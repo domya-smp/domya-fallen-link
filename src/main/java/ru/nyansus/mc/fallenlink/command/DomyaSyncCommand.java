@@ -1,8 +1,10 @@
-package ru.nyansus.mc.fallenlink;
+package ru.nyansus.mc.fallenlink.command;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import ru.nyansus.mc.fallenlink.DomyaFallenLink;
+import ru.nyansus.mc.fallenlink.message.Messages;
 
 public final class DomyaSyncCommand implements CommandExecutor {
 

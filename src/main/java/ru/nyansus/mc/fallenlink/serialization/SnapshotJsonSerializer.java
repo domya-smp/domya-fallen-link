@@ -1,4 +1,8 @@
-package ru.nyansus.mc.fallenlink;
+package ru.nyansus.mc.fallenlink.serialization;
+
+import ru.nyansus.mc.fallenlink.model.PlayerSnapshot;
+import ru.nyansus.mc.fallenlink.model.PlayerStats;
+import ru.nyansus.mc.fallenlink.model.Position;
 
 public final class SnapshotJsonSerializer {
 

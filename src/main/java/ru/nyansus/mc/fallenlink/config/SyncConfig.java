@@ -1,4 +1,4 @@
-package ru.nyansus.mc.fallenlink;
+package ru.nyansus.mc.fallenlink.config;
 
 import org.bukkit.configuration.file.FileConfiguration;
 
