@@ -24,7 +24,7 @@ default-locale: "ru"
 # If PlaceholderAPI or the placeholder value is unavailable, the plugin falls back to the real Minecraft name.
 display-name:
   use-placeholderapi: true
-  placeholder: "%ethos_chat_display_name%"
+  placeholder: "%ethoschat_display_name%"
 
 # When false, the JSON contract stays the same, but private fields are replaced with fake values.
 # Safe aggregate statistics are still sent.
