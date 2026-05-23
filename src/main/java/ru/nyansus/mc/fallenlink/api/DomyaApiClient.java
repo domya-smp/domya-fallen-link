@@ -1,4 +1,4 @@
-package ru.nyansus.mc.fallenlink;
+package ru.nyansus.mc.fallenlink.api;
 
 import java.io.IOException;
 import java.net.URI;
@@ -9,6 +9,9 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import ru.nyansus.mc.fallenlink.config.SyncConfig;
+import ru.nyansus.mc.fallenlink.message.Messages;
+import ru.nyansus.mc.fallenlink.model.PlayerLinkRequest;
 
 public final class DomyaApiClient implements AutoCloseable {
 

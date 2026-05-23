@@ -1,7 +1,10 @@
-package ru.nyansus.mc.fallenlink;
+package ru.nyansus.mc.fallenlink.serialization;
 
 import org.junit.Assert;
 import org.junit.Test;
+import ru.nyansus.mc.fallenlink.model.PlayerSnapshot;
+import ru.nyansus.mc.fallenlink.model.PlayerStats;
+import ru.nyansus.mc.fallenlink.model.Position;
 
 public final class SnapshotJsonSerializerTest {
 

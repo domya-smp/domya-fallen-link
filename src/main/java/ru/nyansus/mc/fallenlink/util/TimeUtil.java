@@ -1,4 +1,4 @@
-package ru.nyansus.mc.fallenlink;
+package ru.nyansus.mc.fallenlink.util;
 
 import java.time.Instant;
 import java.time.ZoneId;

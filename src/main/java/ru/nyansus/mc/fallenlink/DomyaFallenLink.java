@@ -2,6 +2,17 @@ package ru.nyansus.mc.fallenlink;
 
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
+import ru.nyansus.mc.fallenlink.api.DomyaApiClient;
+import ru.nyansus.mc.fallenlink.api.DomyaPayloadFactory;
+import ru.nyansus.mc.fallenlink.command.DomyaSyncCommand;
+import ru.nyansus.mc.fallenlink.command.LinkCommand;
+import ru.nyansus.mc.fallenlink.config.SyncConfig;
+import ru.nyansus.mc.fallenlink.listener.PlayerSyncListener;
+import ru.nyansus.mc.fallenlink.message.Messages;
+import ru.nyansus.mc.fallenlink.player.PlayerNameResolver;
+import ru.nyansus.mc.fallenlink.player.PlayerSnapshotFactory;
+import ru.nyansus.mc.fallenlink.serialization.SnapshotJsonSerializer;
+import ru.nyansus.mc.fallenlink.service.SyncService;
 
 public final class DomyaFallenLink extends JavaPlugin {
 

@@ -1,4 +1,4 @@
-package ru.nyansus.mc.fallenlink;
+package ru.nyansus.mc.fallenlink.message;
 
 import java.io.IOException;
 import java.io.InputStream;

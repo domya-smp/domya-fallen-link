@@ -1,10 +1,11 @@
-package ru.nyansus.mc.fallenlink;
+package ru.nyansus.mc.fallenlink.listener;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import ru.nyansus.mc.fallenlink.DomyaFallenLink;
 
 public final class PlayerSyncListener implements Listener {
 

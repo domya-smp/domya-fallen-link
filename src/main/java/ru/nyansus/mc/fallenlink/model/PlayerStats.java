@@ -1,4 +1,4 @@
-package ru.nyansus.mc.fallenlink;
+package ru.nyansus.mc.fallenlink.model;
 
 public final class PlayerStats {
 

@@ -1,7 +1,8 @@
-package ru.nyansus.mc.fallenlink;
+package ru.nyansus.mc.fallenlink.api;
 
 import org.junit.Assert;
 import org.junit.Test;
+import ru.nyansus.mc.fallenlink.model.PlayerLinkRequest;
 
 public final class DomyaPayloadFactoryTest {
 

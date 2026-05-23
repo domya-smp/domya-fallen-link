@@ -1,7 +1,9 @@
-package ru.nyansus.mc.fallenlink;
+package ru.nyansus.mc.fallenlink.player;
 
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
+import ru.nyansus.mc.fallenlink.config.SyncConfig;
+import ru.nyansus.mc.fallenlink.message.Messages;
 
 public final class PlayerNameResolver {
 
