@@ -16,7 +16,7 @@ public final class DomyaFallenLink extends JavaPlugin {
         saveDefaultConfig();
         reloadServices();
 
-        getServer().getPluginManager().registerEvents(new PlayerSyncListener(this, syncService), this);
+        getServer().getPluginManager().registerEvents(new PlayerSyncListener(this), this);
         registerCommands();
         schedulePeriodicSync();
     }
@@ -80,7 +80,7 @@ public final class DomyaFallenLink extends JavaPlugin {
 
         PluginCommand linkCommand = getCommand("link");
         if (linkCommand != null) {
-            linkCommand.setExecutor(new LinkCommand(this, syncService));
+            linkCommand.setExecutor(new LinkCommand(this));
         }
     }
 

@@ -8,11 +8,9 @@ import org.bukkit.entity.Player;
 public final class LinkCommand implements CommandExecutor {
 
     private final DomyaFallenLink plugin;
-    private final SyncService syncService;
 
-    public LinkCommand(DomyaFallenLink plugin, SyncService syncService) {
+    public LinkCommand(DomyaFallenLink plugin) {
         this.plugin = plugin;
-        this.syncService = syncService;
     }
 
     @Override
@@ -35,7 +33,7 @@ public final class LinkCommand implements CommandExecutor {
         }
 
         player.sendMessage(messages.get(player, "command.link-checking"));
-        syncService.linkPlayer(player, args[0].trim());
+        plugin.getSyncService().linkPlayer(player, args[0].trim());
         return true;
     }
 }
