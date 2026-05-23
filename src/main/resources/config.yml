@@ -1,0 +1,18 @@
+# Domya player sync API endpoint.
+api-url: "https://example.com/api/minecraft/player_update.php"
+
+# Domya account link endpoint.
+link-url: "https://example.com/api/minecraft/link.php"
+
+# Shared secret token. Keep the real value only on the server.
+secret-token: "CHANGE_ME"
+
+# Automatically sync online players every N seconds.
+sync-interval-seconds: 60
+
+# Sync a player when they join or quit.
+sync-on-join: true
+sync-on-quit: true
+
+# Log request/response details useful for troubleshooting.
+debug: false
