@@ -1,49 +1,101 @@
 package ru.nyansus.mc.fallenlink;
 
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class DomyaFallenLink extends JavaPlugin implements CommandExecutor {
+public final class DomyaFallenLink extends JavaPlugin {
+
+    private DomyaApiClient apiClient;
+    private Messages messages;
+    private SyncConfig syncConfig;
+    private SyncService syncService;
+    private int periodicTaskId = -1;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        if (getCommand("domyasync") != null) {
-            getCommand("domyasync").setExecutor(this);
-        }
-        if (getCommand("link") != null) {
-            getCommand("link").setExecutor(this);
-        }
+        reloadServices();
+
+        getServer().getPluginManager().registerEvents(new PlayerSyncListener(this), this);
+        registerCommands();
+        schedulePeriodicSync();
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (command.getName().equalsIgnoreCase("link")) {
-            sender.sendMessage("domya-fallen-link skeleton: account linking is not implemented yet.");
-            return true;
+    public void onDisable() {
+        cancelPeriodicSync();
+        if (apiClient != null) {
+            apiClient.close();
+        }
+    }
+
+    public SyncConfig getSyncConfig() {
+        return syncConfig;
+    }
+
+    public SyncService getSyncService() {
+        return syncService;
+    }
+
+    public Messages getMessages() {
+        return messages;
+    }
+
+    public void reloadAll() {
+        reloadConfig();
+        messages.reload();
+        reloadServices();
+        schedulePeriodicSync();
+    }
+
+    private void reloadServices() {
+        if (apiClient != null) {
+            apiClient.close();
+        }
+        syncConfig = SyncConfig.from(getConfig());
+        if (messages == null) {
+            messages = new Messages(this);
+        }
+        apiClient = new DomyaApiClient(getLogger(), messages, syncConfig, new DomyaPayloadFactory());
+        PlayerNameResolver nameResolver = new PlayerNameResolver(getServer(), messages);
+        PlayerSnapshotFactory snapshotFactory = new PlayerSnapshotFactory(nameResolver, syncConfig);
+        syncService = new SyncService(
+                this,
+                getServer(),
+                getLogger(),
+                syncConfig,
+                messages,
+                apiClient,
+                nameResolver,
+                snapshotFactory,
+                new SnapshotJsonSerializer()
+        );
+    }
+
+    private void registerCommands() {
+        PluginCommand syncCommand = getCommand("domyasync");
+        if (syncCommand != null) {
+            syncCommand.setExecutor(new DomyaSyncCommand(this));
         }
 
-        if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
-            reloadConfig();
-            sender.sendMessage("domya-fallen-link configuration reloaded.");
-            return true;
+        PluginCommand linkCommand = getCommand("link");
+        if (linkCommand != null) {
+            linkCommand.setExecutor(new LinkCommand(this));
         }
+    }
 
-        if (args.length == 0 || args[0].equalsIgnoreCase("status")) {
-            sender.sendMessage("domya-fallen-link v" + getDescription().getVersion());
-            sender.sendMessage("API: " + getConfig().getString("api-url", ""));
-            sender.sendMessage("Online players: " + getServer().getOnlinePlayers().size());
-            return true;
+    private void schedulePeriodicSync() {
+        cancelPeriodicSync();
+        long periodTicks = Math.max(20L, syncConfig.getSyncIntervalSeconds() * 20L);
+        periodicTaskId = getServer().getScheduler()
+                .runTaskTimer(this, syncService::syncOnlinePlayers, 80L, periodTicks)
+                .getTaskId();
+    }
+
+    private void cancelPeriodicSync() {
+        if (periodicTaskId != -1) {
+            getServer().getScheduler().cancelTask(periodicTaskId);
+            periodicTaskId = -1;
         }
-
-        if (args[0].equalsIgnoreCase("sync")) {
-            sender.sendMessage("domya-fallen-link skeleton: sync is not implemented yet.");
-            return true;
-        }
-
-        sender.sendMessage("Usage: /domyasync <sync|reload|status> or /link <code>");
-        return true;
     }
 }

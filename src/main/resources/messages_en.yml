@@ -1,0 +1,26 @@
+# English localization
+
+command:
+  player-only: "§cOnly players can use this command."
+  link-usage: "§eUsage: §f/link <website-code>"
+  link-not-configured: "§cAccount linking is not configured. Contact an administrator."
+  link-checking: "§7Checking link code..."
+  link-connection-error: "§cCould not reach the website. Try again later."
+  link-success: "§aYour profile has been linked to the Domya SMP website."
+  link-failed: "§cCould not link your profile. Check the code on the website."
+  reload-success: "§aDomyaPlayerSync config reloaded."
+  sync-started: "§aSync started."
+  usage: "§cUsage: /domyasync <sync|reload|status> or /link <code>"
+  status-title: "§bDomyaPlayerSync §7v{version}"
+  status-api: "§7API: §f{api}"
+  status-online: "§7Online players: §f{count}"
+
+log:
+  no-online-players: "No online players to sync."
+  sync-not-configured: "API URL or secret token is not configured."
+  api-request: "Domya {operation} request: {payload}"
+  api-response: "Domya {operation} response HTTP {status}: {body}"
+  api-request-failed: "Domya {operation} request failed"
+  link-failed: "Link failed: HTTP {status} {body}"
+  locale-load-failed: "Failed to load locale file: {resource}"
+  placeholderapi-missing: "PlaceholderAPI is not available, falling back to the real player name."
