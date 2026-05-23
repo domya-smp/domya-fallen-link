@@ -6,14 +6,9 @@ author: Domya SMP
 
 commands:
   domyasync:
-    description: Domya player statistics synchronization
-    usage: /domyasync <sync|reload|status>
     permission: domyasync.admin
-  link:
-    description: Link Minecraft account with Domya website profile
-    usage: /link <code>
+  link: {}
 
 permissions:
   domyasync.admin:
-    description: Allows managing domya-fallen-link
     default: op

@@ -6,6 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class DomyaFallenLink extends JavaPlugin {
 
     private DomyaApiClient apiClient;
+    private Messages messages;
     private SyncConfig syncConfig;
     private SyncService syncService;
     private int periodicTaskId = -1;
@@ -36,8 +37,13 @@ public final class DomyaFallenLink extends JavaPlugin {
         return syncService;
     }
 
+    public Messages getMessages() {
+        return messages;
+    }
+
     public void reloadAll() {
         reloadConfig();
+        messages.reload();
         reloadServices();
         schedulePeriodicSync();
     }
@@ -47,7 +53,10 @@ public final class DomyaFallenLink extends JavaPlugin {
             apiClient.close();
         }
         syncConfig = SyncConfig.from(getConfig());
-        apiClient = new DomyaApiClient(getLogger(), syncConfig);
+        if (messages == null) {
+            messages = new Messages(this);
+        }
+        apiClient = new DomyaApiClient(getLogger(), messages, syncConfig);
         PlayerSnapshotFactory snapshotFactory = new PlayerSnapshotFactory();
         syncService = new SyncService(this, apiClient, snapshotFactory);
     }

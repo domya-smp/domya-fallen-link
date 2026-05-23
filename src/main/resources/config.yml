@@ -16,3 +16,6 @@ sync-on-quit: true
 
 # Log request/response details useful for troubleshooting.
 debug: false
+
+# Locale used for console and non-player command output.
+default-locale: "ru"

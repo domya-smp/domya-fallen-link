@@ -17,23 +17,24 @@ public final class LinkCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        Messages messages = plugin.getMessages();
         if (!(sender instanceof Player)) {
-            sender.sendMessage("§cЭту команду может выполнить только игрок.");
+            sender.sendMessage(messages.get(sender, "command.player-only"));
             return true;
         }
 
         if (args.length < 1 || args[0].trim().length() < 4) {
-            sender.sendMessage("§eИспользование: §f/link <код-с-сайта>");
+            sender.sendMessage(messages.get(sender, "command.link-usage"));
             return true;
         }
 
         Player player = (Player) sender;
         if (!plugin.getSyncConfig().hasLinkSettings()) {
-            player.sendMessage("§cПривязка не настроена. Сообщи администратору.");
+            player.sendMessage(messages.get(player, "command.link-not-configured"));
             return true;
         }
 
-        player.sendMessage("§7Проверяю код привязки...");
+        player.sendMessage(messages.get(player, "command.link-checking"));
         syncService.linkPlayer(player, args[0].trim());
         return true;
     }

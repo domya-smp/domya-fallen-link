@@ -1,0 +1,25 @@
+# Русская локализация
+
+command:
+  player-only: "§cЭту команду может выполнить только игрок."
+  link-usage: "§eИспользование: §f/link <код-с-сайта>"
+  link-not-configured: "§cПривязка не настроена. Сообщи администратору."
+  link-checking: "§7Проверяю код привязки..."
+  link-connection-error: "§cОшибка связи с сайтом. Попробуй позже."
+  link-success: "§aПрофиль успешно привязан к сайту Domya SMP."
+  link-failed: "§cНе удалось привязать профиль. Проверь код на сайте."
+  reload-success: "§aDomyaPlayerSync config reloaded."
+  sync-started: "§aSync started."
+  usage: "§cUsage: /domyasync <sync|reload|status> or /link <code>"
+  status-title: "§bDomyaPlayerSync §7v{version}"
+  status-api: "§7API: §f{api}"
+  status-online: "§7Online players: §f{count}"
+
+log:
+  no-online-players: "No online players to sync."
+  sync-not-configured: "API URL or secret token is not configured."
+  api-request: "Domya {operation} request: {payload}"
+  api-response: "Domya {operation} response HTTP {status}: {body}"
+  api-request-failed: "Domya {operation} request failed"
+  link-failed: "Link failed: HTTP {status} {body}"
+  locale-load-failed: "Failed to load locale file: {resource}"

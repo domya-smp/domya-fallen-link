@@ -21,23 +21,30 @@ public final class DomyaSyncCommand implements CommandExecutor {
 
         if (args[0].equalsIgnoreCase("reload")) {
             plugin.reloadAll();
-            sender.sendMessage("§aDomyaPlayerSync config reloaded.");
+            sender.sendMessage(plugin.getMessages().get(sender, "command.reload-success"));
             return true;
         }
 
         if (args[0].equalsIgnoreCase("sync")) {
             plugin.getSyncService().syncOnlinePlayers();
-            sender.sendMessage("§aSync started.");
+            sender.sendMessage(plugin.getMessages().get(sender, "command.sync-started"));
             return true;
         }
 
-        sender.sendMessage("§cUsage: /domyasync <sync|reload|status> or /link <code>");
+        sender.sendMessage(plugin.getMessages().get(sender, "command.usage"));
         return true;
     }
 
     private void sendStatus(CommandSender sender) {
-        sender.sendMessage("§bDomyaPlayerSync §7v" + plugin.getDescription().getVersion());
-        sender.sendMessage("§7API: §f" + plugin.getSyncConfig().getApiUrl());
-        sender.sendMessage("§7Online players: §f" + plugin.getServer().getOnlinePlayers().size());
+        Messages messages = plugin.getMessages();
+        sender.sendMessage(messages.get(sender,
+                "command.status-title",
+                "{version}", plugin.getDescription().getVersion()));
+        sender.sendMessage(messages.get(sender,
+                "command.status-api",
+                "{api}", plugin.getSyncConfig().getApiUrl()));
+        sender.sendMessage(messages.get(sender,
+                "command.status-online",
+                "{count}", String.valueOf(plugin.getServer().getOnlinePlayers().size())));
     }
 }

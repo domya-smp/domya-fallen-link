@@ -17,10 +17,12 @@ public final class DomyaApiClient implements AutoCloseable {
 
     private final HttpClient httpClient;
     private final Logger logger;
+    private final Messages messages;
     private final SyncConfig config;
 
-    public DomyaApiClient(Logger logger, SyncConfig config) {
+    public DomyaApiClient(Logger logger, Messages messages, SyncConfig config) {
         this.logger = logger;
+        this.messages = messages;
         this.config = config;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(CONNECT_TIMEOUT)
@@ -29,7 +31,7 @@ public final class DomyaApiClient implements AutoCloseable {
 
     public CompletableFuture<ApiResponse> sendSyncPayload(String playersJson) {
         if (!config.hasSyncSettings()) {
-            logger.warning("API URL or secret token is not configured.");
+            logger.warning(messages.get("log.sync-not-configured"));
             return CompletableFuture.completedFuture(new ApiResponse(0, ""));
         }
 
@@ -70,7 +72,9 @@ public final class DomyaApiClient implements AutoCloseable {
                 .build();
 
         if (config.isDebug()) {
-            logger.info("Domya " + operation + " request: " + payload);
+            logger.info(messages.get("log.api-request",
+                    "{operation}", operation,
+                    "{payload}", payload));
         }
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
@@ -81,7 +85,10 @@ public final class DomyaApiClient implements AutoCloseable {
     private ApiResponse handleResponse(String operation, HttpResponse<String> response) {
         String body = response.body() == null ? "" : response.body();
         if (config.isDebug() || response.statusCode() < 200 || response.statusCode() >= 300) {
-            logger.info("Domya " + operation + " response HTTP " + response.statusCode() + ": " + body);
+            logger.info(messages.get("log.api-response",
+                    "{operation}", operation,
+                    "{status}", String.valueOf(response.statusCode()),
+                    "{body}", body));
         }
         return new ApiResponse(response.statusCode(), body);
     }
@@ -91,7 +98,7 @@ public final class DomyaApiClient implements AutoCloseable {
         if (cause == null) {
             cause = error;
         }
-        logger.log(Level.WARNING, "Domya " + operation + " request failed", cause);
+        logger.log(Level.WARNING, messages.get("log.api-request-failed", "{operation}", operation), cause);
         return new ApiResponse(0, "");
     }
 }

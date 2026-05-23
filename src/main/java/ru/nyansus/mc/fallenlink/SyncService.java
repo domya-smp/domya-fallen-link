@@ -21,7 +21,7 @@ public final class SyncService {
         Collection<? extends Player> players = plugin.getServer().getOnlinePlayers();
         if (players.isEmpty()) {
             if (plugin.getSyncConfig().isDebug()) {
-                plugin.getLogger().info("No online players to sync.");
+                plugin.getLogger().info(plugin.getMessages().get("log.no-online-players"));
             }
             return;
         }
@@ -47,20 +47,23 @@ public final class SyncService {
     }
 
     private void handleLinkResponse(Player player, ApiResponse response) {
+        Messages messages = plugin.getMessages();
         if (response.getStatusCode() == 0) {
-            player.sendMessage("§cОшибка связи с сайтом. Попробуй позже.");
+            player.sendMessage(messages.get(player, "command.link-connection-error"));
             return;
         }
 
         if (response.isOkJson()) {
-            player.sendMessage("§aПрофиль успешно привязан к сайту Domya SMP.");
+            player.sendMessage(messages.get(player, "command.link-success"));
             syncPlayer(player, true);
             return;
         }
 
-        player.sendMessage("§cНе удалось привязать профиль. Проверь код на сайте.");
+        player.sendMessage(messages.get(player, "command.link-failed"));
         if (plugin.getSyncConfig().isDebug()) {
-            plugin.getLogger().warning("Link failed: HTTP " + response.getStatusCode() + " " + response.getBody());
+            plugin.getLogger().warning(messages.get("log.link-failed",
+                    "{status}", String.valueOf(response.getStatusCode()),
+                    "{body}", response.getBody()));
         }
     }
 
