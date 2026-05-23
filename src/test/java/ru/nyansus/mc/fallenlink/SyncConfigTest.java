@@ -19,6 +19,9 @@ public final class SyncConfigTest {
         Assert.assertTrue(config.isSyncOnJoin());
         Assert.assertTrue(config.isSyncOnQuit());
         Assert.assertFalse(config.isDebug());
+        Assert.assertTrue(config.isUsePlaceholderApiName());
+        Assert.assertEquals("", config.getNamePlaceholder());
+        Assert.assertTrue(config.getPrivacyPolicy().isSendPrivateData());
     }
 
     @Test
@@ -42,5 +45,27 @@ public final class SyncConfigTest {
 
         Assert.assertFalse(config.hasSyncSettings());
         Assert.assertFalse(config.hasLinkSettings());
+    }
+
+    @Test
+    public void privacyPolicyReadsFakeValues() {
+        YamlConfiguration yaml = new YamlConfiguration();
+        yaml.set("privacy.send-private-data", false);
+        yaml.set("privacy.fake-world", "hidden");
+        yaml.set("privacy.fake-coordinate", 42.0D);
+        yaml.set("privacy.fake-health", 19.0D);
+        yaml.set("privacy.fake-food", 18);
+        yaml.set("privacy.fake-level", 7);
+        yaml.set("privacy.fake-exp", 0.25D);
+
+        PrivacyPolicy privacy = SyncConfig.from(yaml).getPrivacyPolicy();
+
+        Assert.assertFalse(privacy.isSendPrivateData());
+        Assert.assertEquals("hidden", privacy.getFakeWorld());
+        Assert.assertEquals(42.0D, privacy.getFakeCoordinate(), 0.0D);
+        Assert.assertEquals(19.0D, privacy.getFakeHealth(), 0.0D);
+        Assert.assertEquals(18, privacy.getFakeFood());
+        Assert.assertEquals(7, privacy.getFakeLevel());
+        Assert.assertEquals(0.25D, privacy.getFakeExp(), 0.0D);
     }
 }

@@ -57,7 +57,8 @@ public final class DomyaFallenLink extends JavaPlugin {
             messages = new Messages(this);
         }
         apiClient = new DomyaApiClient(getLogger(), messages, syncConfig, new DomyaPayloadFactory());
-        PlayerSnapshotFactory snapshotFactory = new PlayerSnapshotFactory();
+        PlayerNameResolver nameResolver = new PlayerNameResolver(getServer(), messages);
+        PlayerSnapshotFactory snapshotFactory = new PlayerSnapshotFactory(nameResolver, syncConfig);
         syncService = new SyncService(
                 this,
                 getServer(),
@@ -65,6 +66,7 @@ public final class DomyaFallenLink extends JavaPlugin {
                 syncConfig,
                 messages,
                 apiClient,
+                nameResolver,
                 snapshotFactory,
                 new SnapshotJsonSerializer()
         );

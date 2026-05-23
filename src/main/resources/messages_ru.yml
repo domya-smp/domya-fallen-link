@@ -23,3 +23,4 @@ log:
   api-request-failed: "Запрос Domya {operation} завершился ошибкой"
   link-failed: "Привязка не удалась: HTTP {status} {body}"
   locale-load-failed: "Не удалось загрузить файл локализации: {resource}"
+  placeholderapi-missing: "PlaceholderAPI не найден, используется настоящий ник игрока."

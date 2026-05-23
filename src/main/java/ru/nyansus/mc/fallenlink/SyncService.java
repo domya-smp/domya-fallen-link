@@ -16,6 +16,7 @@ public final class SyncService {
     private final SyncConfig config;
     private final Messages messages;
     private final DomyaApiClient apiClient;
+    private final PlayerNameResolver nameResolver;
     private final PlayerSnapshotFactory snapshotFactory;
     private final SnapshotJsonSerializer snapshotJsonSerializer;
 
@@ -26,6 +27,7 @@ public final class SyncService {
             SyncConfig config,
             Messages messages,
             DomyaApiClient apiClient,
+            PlayerNameResolver nameResolver,
             PlayerSnapshotFactory snapshotFactory,
             SnapshotJsonSerializer snapshotJsonSerializer
     ) {
@@ -35,6 +37,7 @@ public final class SyncService {
         this.config = config;
         this.messages = messages;
         this.apiClient = apiClient;
+        this.nameResolver = nameResolver;
         this.snapshotFactory = snapshotFactory;
         this.snapshotJsonSerializer = snapshotJsonSerializer;
     }
@@ -63,7 +66,7 @@ public final class SyncService {
     }
 
     public void linkPlayer(Player player, String code) {
-        PlayerLinkRequest request = PlayerLinkRequest.from(player, code);
+        PlayerLinkRequest request = PlayerLinkRequest.from(player, code, nameResolver.resolve(player, config));
         apiClient.sendLinkRequest(request).thenAccept(response -> server.getScheduler()
                 .runTask(plugin, () -> handleLinkResponse(player, response)));
     }

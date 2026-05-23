@@ -16,12 +16,12 @@ public final class PlayerLinkRequest {
         this.displayName = displayName;
     }
 
-    public static PlayerLinkRequest from(Player player, String code) {
+    public static PlayerLinkRequest from(Player player, String code, String publicName) {
         return new PlayerLinkRequest(
                 code,
                 player.getUniqueId().toString(),
-                player.getName(),
-                safeDisplayName(player)
+                publicName,
+                publicName
         );
     }
 
@@ -41,11 +41,4 @@ public final class PlayerLinkRequest {
         return displayName;
     }
 
-    private static String safeDisplayName(Player player) {
-        try {
-            return player.getDisplayName();
-        } catch (RuntimeException e) {
-            return player.getName();
-        }
-    }
 }

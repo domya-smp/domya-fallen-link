@@ -11,6 +11,9 @@ public final class SyncConfig {
     private final boolean syncOnJoin;
     private final boolean syncOnQuit;
     private final boolean debug;
+    private final boolean usePlaceholderApiName;
+    private final String namePlaceholder;
+    private final PrivacyPolicy privacyPolicy;
 
     private SyncConfig(
             String apiUrl,
@@ -19,7 +22,10 @@ public final class SyncConfig {
             long syncIntervalSeconds,
             boolean syncOnJoin,
             boolean syncOnQuit,
-            boolean debug
+            boolean debug,
+            boolean usePlaceholderApiName,
+            String namePlaceholder,
+            PrivacyPolicy privacyPolicy
     ) {
         this.apiUrl = apiUrl;
         this.linkUrl = linkUrl;
@@ -28,6 +34,9 @@ public final class SyncConfig {
         this.syncOnJoin = syncOnJoin;
         this.syncOnQuit = syncOnQuit;
         this.debug = debug;
+        this.usePlaceholderApiName = usePlaceholderApiName;
+        this.namePlaceholder = namePlaceholder;
+        this.privacyPolicy = privacyPolicy;
     }
 
     public static SyncConfig from(FileConfiguration config) {
@@ -38,7 +47,10 @@ public final class SyncConfig {
                 Math.max(15L, config.getLong("sync-interval-seconds", 60L)),
                 config.getBoolean("sync-on-join", true),
                 config.getBoolean("sync-on-quit", true),
-                config.getBoolean("debug", false)
+                config.getBoolean("debug", false),
+                config.getBoolean("display-name.use-placeholderapi", true),
+                string(config, "display-name.placeholder"),
+                PrivacyPolicy.from(config)
         );
     }
 
@@ -68,6 +80,18 @@ public final class SyncConfig {
 
     public boolean isDebug() {
         return debug;
+    }
+
+    public boolean isUsePlaceholderApiName() {
+        return usePlaceholderApiName;
+    }
+
+    public String getNamePlaceholder() {
+        return namePlaceholder;
+    }
+
+    public PrivacyPolicy getPrivacyPolicy() {
+        return privacyPolicy;
     }
 
     public boolean hasSyncSettings() {

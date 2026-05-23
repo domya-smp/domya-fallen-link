@@ -8,31 +8,44 @@ import org.bukkit.entity.Player;
 
 public final class PlayerSnapshotFactory {
 
+    private final PlayerNameResolver nameResolver;
+    private final SyncConfig config;
+
+    public PlayerSnapshotFactory(PlayerNameResolver nameResolver, SyncConfig config) {
+        this.nameResolver = nameResolver;
+        this.config = config;
+    }
+
     public PlayerSnapshot create(Player player, boolean online) {
         Location location = player.getLocation();
         World world = player.getWorld();
+        String publicName = nameResolver.resolve(player, config);
+        PrivacyPolicy privacy = config.getPrivacyPolicy();
         return new PlayerSnapshot(
                 player.getUniqueId().toString(),
-                player.getName(),
-                safeDisplayName(player),
+                publicName,
+                publicName,
                 online,
                 TimeUtil.nowMysql(),
                 TimeUtil.mysqlFromMillis(Math.max(0L, player.getFirstPlayed())),
-                world == null ? "" : world.getName(),
-                position(location),
-                stats(player)
+                worldName(world, privacy),
+                position(location, privacy),
+                stats(player, privacy)
         );
     }
 
-    private String safeDisplayName(Player player) {
-        try {
-            return player.getDisplayName();
-        } catch (RuntimeException e) {
-            return player.getName();
+    private String worldName(World world, PrivacyPolicy privacy) {
+        if (!privacy.isSendPrivateData()) {
+            return privacy.getFakeWorld();
         }
+        return world == null ? "" : world.getName();
     }
 
-    private Position position(Location location) {
+    private Position position(Location location, PrivacyPolicy privacy) {
+        if (!privacy.isSendPrivateData()) {
+            double coordinate = privacy.getFakeCoordinate();
+            return new Position(coordinate, coordinate, coordinate);
+        }
         return new Position(
                 location == null ? 0.0D : round(location.getX()),
                 location == null ? 0.0D : round(location.getY()),
@@ -40,7 +53,7 @@ public final class PlayerSnapshotFactory {
         );
     }
 
-    private PlayerStats stats(Player player) {
+    private PlayerStats stats(Player player, PrivacyPolicy privacy) {
         return new PlayerStats(
                 ticksToSeconds(stat(player, "PLAY_ONE_MINUTE", "PLAY_TIME")),
                 stat(player, "DEATHS"),
@@ -53,10 +66,10 @@ public final class PlayerSnapshotFactory {
                 minedBlocks(player),
                 stat(player, "ANIMALS_BRED"),
                 stat(player, "FISH_CAUGHT"),
-                player.getLevel(),
-                round(player.getExp()),
-                round(player.getHealth()),
-                player.getFoodLevel()
+                privacy.isSendPrivateData() ? player.getLevel() : privacy.getFakeLevel(),
+                privacy.isSendPrivateData() ? round(player.getExp()) : privacy.getFakeExp(),
+                privacy.isSendPrivateData() ? round(player.getHealth()) : privacy.getFakeHealth(),
+                privacy.isSendPrivateData() ? player.getFoodLevel() : privacy.getFakeFood()
         );
     }
 

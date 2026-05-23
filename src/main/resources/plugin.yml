@@ -3,6 +3,8 @@ version: '${version}'
 main: ru.nyansus.mc.fallenlink.DomyaFallenLink
 api-version: '1.21'
 author: Domya SMP
+softdepend:
+  - PlaceholderAPI
 
 commands:
   domyasync:

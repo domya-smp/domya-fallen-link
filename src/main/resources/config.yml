@@ -19,3 +19,20 @@ debug: false
 
 # Locale used for console and non-player command output.
 default-locale: "ru"
+
+# Name sent to the website in nickname/display_name fields.
+# If PlaceholderAPI or the placeholder value is unavailable, the plugin falls back to the real Minecraft name.
+display-name:
+  use-placeholderapi: true
+  placeholder: "%ethos_chat_rpname%"
+
+# When false, the JSON contract stays the same, but private fields are replaced with fake values.
+# Safe aggregate statistics are still sent.
+privacy:
+  send-private-data: true
+  fake-world: ""
+  fake-coordinate: 0.0
+  fake-health: 20.0
+  fake-food: 20
+  fake-level: 0
+  fake-exp: 0.0
