@@ -8,7 +8,7 @@ link-url: "https://example.com/api/minecraft/link.php"
 secret-token: "CHANGE_ME"
 
 # Automatically sync online players every N seconds.
-sync-interval-seconds: 60
+sync-interval-seconds: 300
 
 # Sync a player when they join or quit.
 sync-on-join: true
