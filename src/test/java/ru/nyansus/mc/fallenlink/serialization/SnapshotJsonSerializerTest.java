@@ -1,5 +1,6 @@
 package ru.nyansus.mc.fallenlink.serialization;
 
+import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 import ru.nyansus.mc.fallenlink.model.PlayerSnapshot;
@@ -10,7 +11,8 @@ public final class SnapshotJsonSerializerTest {
 
     @Test
     public void serializeKeepsCompatiblePlayerShape() {
-        PlayerStats stats = new PlayerStats(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0.5D, 20.0D, 19);
+        PlayerStats stats = new PlayerStats(
+                1, 2, 3, 4, Map.of("creeper", 2), 5, 6, 7, 8, 9, 10, 11, 12, 0.5D, 20.0D, 19);
         PlayerSnapshot snapshot = new PlayerSnapshot(
                 "uuid",
                 "nick",
@@ -31,6 +33,8 @@ public final class SnapshotJsonSerializerTest {
         Assert.assertTrue(json.contains("\"location\":{\"x\":1.0,\"y\":2.0,\"z\":3.0}"));
         Assert.assertTrue(json.contains("\"stats\":{"));
         Assert.assertTrue(json.contains("\"playtime_seconds\":1"));
+        Assert.assertTrue(json.contains("\"mob_kills\":4"));
+        Assert.assertTrue(json.contains("\"mob_kills_by_type\":{\"creeper\":2}"));
         Assert.assertTrue(json.contains("\"food\":19"));
     }
 }

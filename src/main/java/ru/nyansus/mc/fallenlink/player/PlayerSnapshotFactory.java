@@ -1,9 +1,12 @@
 package ru.nyansus.mc.fallenlink.player;
 
+import java.util.Map;
+import java.util.TreeMap;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
 import org.bukkit.World;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import ru.nyansus.mc.fallenlink.config.PrivacyPolicy;
 import ru.nyansus.mc.fallenlink.config.SyncConfig;
@@ -65,6 +68,7 @@ public final class PlayerSnapshotFactory {
                 stat(player, "DEATHS"),
                 stat(player, "PLAYER_KILLS"),
                 stat(player, "MOB_KILLS"),
+                mobKillsByType(player),
                 stat(player, "JUMP"),
                 stat(player, "DAMAGE_DEALT"),
                 stat(player, "DAMAGE_TAKEN"),
@@ -113,6 +117,39 @@ public final class PlayerSnapshotFactory {
             }
         }
         return total;
+    }
+
+    private Map<String, Integer> mobKillsByType(Player player) {
+        Statistic statistic = statistic("KILL_ENTITY");
+        if (statistic == null) {
+            return Map.of();
+        }
+
+        Map<String, Integer> kills = new TreeMap<>();
+        for (EntityType entityType : EntityType.values()) {
+            if (!isMobKillStatCandidate(entityType)) {
+                continue;
+            }
+            int count = entityStatistic(player, statistic, entityType);
+            if (count > 0) {
+                kills.put(entityType.getKey().getKey(), count);
+            }
+        }
+        return kills;
+    }
+
+    private boolean isMobKillStatCandidate(EntityType entityType) {
+        return entityType.isAlive()
+                && entityType != EntityType.PLAYER
+                && entityType.getKey() != null;
+    }
+
+    private int entityStatistic(Player player, Statistic statistic, EntityType entityType) {
+        try {
+            return player.getStatistic(statistic, entityType);
+        } catch (RuntimeException e) {
+            return 0;
+        }
     }
 
     private int stat(Player player, String... names) {
