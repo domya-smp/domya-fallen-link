@@ -15,6 +15,7 @@ public final class SyncConfigTest {
         Assert.assertEquals("", config.getApiUrl());
         Assert.assertEquals("", config.getLinkUrl());
         Assert.assertEquals("", config.getSecretToken());
+        Assert.assertTrue(config.isSyncEnabled());
         Assert.assertEquals(60L, config.getSyncIntervalSeconds());
         Assert.assertTrue(config.isSyncOnJoin());
         Assert.assertTrue(config.isSyncOnQuit());
@@ -22,6 +23,14 @@ public final class SyncConfigTest {
         Assert.assertTrue(config.isUsePlaceholderApiName());
         Assert.assertEquals("", config.getNamePlaceholder());
         Assert.assertTrue(config.getPrivacyPolicy().isSendPrivateData());
+    }
+
+    @Test
+    public void masterSwitchCanDisableAllSynchronization() {
+        YamlConfiguration yaml = new YamlConfiguration();
+        yaml.set("sync-enabled", false);
+
+        Assert.assertFalse(SyncConfig.from(yaml).isSyncEnabled());
     }
 
     @Test

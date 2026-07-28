@@ -1,105 +1,129 @@
 package ru.nyansus.mc.fallenlink.service;
 
 import java.util.Collection;
-import java.util.stream.Collectors;
+import java.util.List;
 import java.util.logging.Logger;
 
-import org.bukkit.Server;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
-import ru.nyansus.mc.fallenlink.api.ApiResponse;
-import ru.nyansus.mc.fallenlink.api.DomyaApiClient;
+import ru.nyansus.mc.fallenlink.api.DomyaGateway;
+import ru.nyansus.mc.fallenlink.api.LinkResult;
 import ru.nyansus.mc.fallenlink.config.SyncConfig;
-import ru.nyansus.mc.fallenlink.message.Messages;
+import ru.nyansus.mc.fallenlink.config.SyncConfigProvider;
+import ru.nyansus.mc.fallenlink.message.MessageProvider;
 import ru.nyansus.mc.fallenlink.model.PlayerLinkRequest;
-import ru.nyansus.mc.fallenlink.player.PlayerNameResolver;
-import ru.nyansus.mc.fallenlink.player.PlayerSnapshotFactory;
-import ru.nyansus.mc.fallenlink.serialization.SnapshotJsonSerializer;
+import ru.nyansus.mc.fallenlink.model.PlayerSnapshot;
+import ru.nyansus.mc.fallenlink.player.OnlinePlayerProvider;
+import ru.nyansus.mc.fallenlink.player.PlayerNameProvider;
+import ru.nyansus.mc.fallenlink.player.PlayerSnapshotProvider;
 
-public final class SyncService {
+public final class SyncService implements PlayerSyncUseCase, PlayerLinkUseCase {
 
-    private final Plugin plugin;
-    private final Server server;
     private final Logger logger;
-    private final SyncConfig config;
-    private final Messages messages;
-    private final DomyaApiClient apiClient;
-    private final PlayerNameResolver nameResolver;
-    private final PlayerSnapshotFactory snapshotFactory;
-    private final SnapshotJsonSerializer snapshotJsonSerializer;
+    private final SyncAvailability syncAvailability;
+    private final SyncConfigProvider configProvider;
+    private final MessageProvider messages;
+    private final DomyaGateway gateway;
+    private final OnlinePlayerProvider onlinePlayerProvider;
+    private final PlayerNameProvider nameProvider;
+    private final PlayerSnapshotProvider snapshotProvider;
+    private final MainThreadExecutor mainThreadExecutor;
 
     public SyncService(
-            Plugin plugin,
-            Server server,
             Logger logger,
-            SyncConfig config,
-            Messages messages,
-            DomyaApiClient apiClient,
-            PlayerNameResolver nameResolver,
-            PlayerSnapshotFactory snapshotFactory,
-            SnapshotJsonSerializer snapshotJsonSerializer
+            SyncAvailability syncAvailability,
+            SyncConfigProvider configProvider,
+            MessageProvider messages,
+            DomyaGateway gateway,
+            OnlinePlayerProvider onlinePlayerProvider,
+            PlayerNameProvider nameProvider,
+            PlayerSnapshotProvider snapshotProvider,
+            MainThreadExecutor mainThreadExecutor
     ) {
-        this.plugin = plugin;
-        this.server = server;
         this.logger = logger;
-        this.config = config;
+        this.syncAvailability = syncAvailability;
+        this.configProvider = configProvider;
         this.messages = messages;
-        this.apiClient = apiClient;
-        this.nameResolver = nameResolver;
-        this.snapshotFactory = snapshotFactory;
-        this.snapshotJsonSerializer = snapshotJsonSerializer;
+        this.gateway = gateway;
+        this.onlinePlayerProvider = onlinePlayerProvider;
+        this.nameProvider = nameProvider;
+        this.snapshotProvider = snapshotProvider;
+        this.mainThreadExecutor = mainThreadExecutor;
     }
 
+    @Override
     public void syncOnlinePlayers() {
-        Collection<? extends Player> players = server.getOnlinePlayers();
+        if (!syncAvailability.isEnabled()) {
+            return;
+        }
+        Collection<? extends Player> players = onlinePlayerProvider.getOnlinePlayers();
         if (players.isEmpty()) {
-            if (config.isDebug()) {
+            if (configProvider.current().isDebug()) {
                 logger.info(messages.get("log.no-online-players"));
             }
             return;
         }
 
-        String playersJson = players.stream()
-                .map(player -> snapshotJsonSerializer.serialize(snapshotFactory.create(player, true)))
-                .collect(Collectors.joining(",", "[", "]"));
-        sendPlayers(playersJson);
+        List<PlayerSnapshot> snapshots = players.stream()
+                .map(player -> snapshotProvider.create(player, true))
+                .toList();
+        gateway.syncPlayers(snapshots);
     }
 
+    @Override
     public void syncPlayer(Player player, boolean online) {
-        if (player == null) {
+        if (!syncAvailability.isEnabled() || player == null) {
             return;
         }
-        String playersJson = "[" + snapshotJsonSerializer.serialize(snapshotFactory.create(player, online)) + "]";
-        sendPlayers(playersJson);
+        gateway.syncPlayers(List.of(snapshotProvider.create(player, online)));
     }
 
+    @Override
     public void linkPlayer(Player player, String code) {
-        PlayerLinkRequest request = PlayerLinkRequest.from(player, code, nameResolver.resolve(player, config));
-        apiClient.sendLinkRequest(request).thenAccept(response -> server.getScheduler()
-                .runTask(plugin, () -> handleLinkResponse(player, response)));
+        if (!syncAvailability.isEnabled()) {
+            return;
+        }
+        String publicName = nameProvider.resolve(player);
+        PlayerLinkRequest request = new PlayerLinkRequest(
+                code,
+                player.getUniqueId().toString(),
+                publicName,
+                publicName
+        );
+        gateway.linkPlayer(request)
+                .thenAccept(result -> mainThreadExecutor.execute(() -> {
+                    if (syncAvailability.isEnabled()) {
+                        handleLinkResult(player, result);
+                    }
+                }));
     }
 
-    private void handleLinkResponse(Player player, ApiResponse response) {
-        if (response.getStatusCode() == 0) {
-            player.sendMessage(messages.get(player, "command.link-connection-error"));
-            return;
+    private void handleLinkResult(Player player, LinkResult result) {
+        switch (result.getStatus()) {
+            case SUCCESS:
+                player.sendMessage(messages.get(player, "command.link-success"));
+                syncPlayer(player, true);
+                break;
+            case CONNECTION_ERROR:
+                player.sendMessage(messages.get(player, "command.link-connection-error"));
+                break;
+            case NOT_CONFIGURED:
+                player.sendMessage(messages.get(player, "command.link-not-configured"));
+                break;
+            case HTTP_ERROR:
+                handleLinkHttpError(player, result);
+                break;
+            default:
+                throw new IllegalStateException("Unknown link status: " + result.getStatus());
         }
+    }
 
-        if (response.isOkJson()) {
-            player.sendMessage(messages.get(player, "command.link-success"));
-            syncPlayer(player, true);
-            return;
-        }
-
+    private void handleLinkHttpError(Player player, LinkResult result) {
         player.sendMessage(messages.get(player, "command.link-failed"));
+        SyncConfig config = configProvider.current();
         if (config.isDebug()) {
             logger.warning(messages.get("log.link-failed",
-                    "{status}", String.valueOf(response.getStatusCode()),
-                    "{body}", response.getBody()));
+                    "{status}", String.valueOf(result.getStatusCode()),
+                    "{body}", result.getBody()));
         }
-    }
-
-    private void sendPlayers(String playersJson) {
-        apiClient.sendSyncPayload(playersJson);
     }
 }

@@ -1,7 +1,5 @@
 package ru.nyansus.mc.fallenlink.model;
 
-import org.bukkit.entity.Player;
-
 public final class PlayerLinkRequest {
 
     private final String code;
@@ -14,15 +12,6 @@ public final class PlayerLinkRequest {
         this.uuid = uuid;
         this.nickname = nickname;
         this.displayName = displayName;
-    }
-
-    public static PlayerLinkRequest from(Player player, String code, String publicName) {
-        return new PlayerLinkRequest(
-                code,
-                player.getUniqueId().toString(),
-                publicName,
-                publicName
-        );
     }
 
     public String getCode() {

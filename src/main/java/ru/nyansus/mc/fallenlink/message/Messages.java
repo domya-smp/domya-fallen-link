@@ -14,7 +14,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class Messages {
+public final class Messages implements MessageProvider {
 
     private static final String FALLBACK_LOCALE = "en";
     private static final Map<String, String> LOCALE_MAP = Map.of(
@@ -38,6 +38,7 @@ public final class Messages {
         load();
     }
 
+    @Override
     public String get(CommandSender sender, String key, String... replacements) {
         String locale = defaultLocale;
         if (sender instanceof Player) {
@@ -47,6 +48,7 @@ public final class Messages {
         return resolve(locale, key, replacements);
     }
 
+    @Override
     public String get(String key, String... replacements) {
         return resolve(defaultLocale, key, replacements);
     }

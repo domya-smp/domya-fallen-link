@@ -1,6 +1,10 @@
 package ru.nyansus.mc.fallenlink.api;
 
+import java.util.regex.Pattern;
+
 public final class ApiResponse {
+
+    private static final Pattern OK_TRUE_PATTERN = Pattern.compile("\"ok\"\\s*:\\s*true");
 
     private final int statusCode;
     private final String body;
@@ -22,7 +26,11 @@ public final class ApiResponse {
         return statusCode >= 200 && statusCode < 300;
     }
 
+    public boolean isConnectionError() {
+        return statusCode == 0;
+    }
+
     public boolean isOkJson() {
-        return isSuccessful() && body.contains("\"ok\":true");
+        return isSuccessful() && OK_TRUE_PATTERN.matcher(body).find();
     }
 }

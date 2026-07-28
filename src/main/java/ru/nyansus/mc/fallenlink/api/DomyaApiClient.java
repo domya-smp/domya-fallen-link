@@ -1,61 +1,71 @@
 package ru.nyansus.mc.fallenlink.api;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import ru.nyansus.mc.fallenlink.config.SyncConfig;
-import ru.nyansus.mc.fallenlink.message.Messages;
+import ru.nyansus.mc.fallenlink.config.SyncConfigProvider;
+import ru.nyansus.mc.fallenlink.message.MessageProvider;
 import ru.nyansus.mc.fallenlink.model.PlayerLinkRequest;
+import ru.nyansus.mc.fallenlink.model.PlayerSnapshot;
 
-public final class DomyaApiClient implements AutoCloseable {
+public final class DomyaApiClient implements DomyaGateway {
 
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(8);
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(12);
 
     private final HttpClient httpClient;
     private final Logger logger;
-    private final Messages messages;
-    private final SyncConfig config;
+    private final MessageProvider messages;
+    private final SyncConfigProvider configProvider;
     private final DomyaPayloadFactory payloadFactory;
+    private final String userAgent;
 
     public DomyaApiClient(
             Logger logger,
-            Messages messages,
-            SyncConfig config,
-            DomyaPayloadFactory payloadFactory
+            MessageProvider messages,
+            SyncConfigProvider configProvider,
+            DomyaPayloadFactory payloadFactory,
+            String pluginVersion
     ) {
         this.logger = logger;
         this.messages = messages;
-        this.config = config;
+        this.configProvider = configProvider;
         this.payloadFactory = payloadFactory;
+        this.userAgent = "domya-fallen-link/" + pluginVersion + " Paper";
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(CONNECT_TIMEOUT)
                 .build();
     }
 
-    public CompletableFuture<ApiResponse> sendSyncPayload(String playersJson) {
+    @Override
+    public CompletableFuture<ApiResponse> syncPlayers(Collection<PlayerSnapshot> players) {
+        SyncConfig config = configProvider.current();
         if (!config.hasSyncSettings()) {
             logger.warning(messages.get("log.sync-not-configured"));
             return CompletableFuture.completedFuture(new ApiResponse(0, ""));
         }
 
-        String payload = payloadFactory.syncPayload(config.getSecretToken(), playersJson);
+        String payload = payloadFactory.syncPayload(config.getSecretToken(), players);
         return postJson(config.getApiUrl(), payload, "sync");
     }
 
-    public CompletableFuture<ApiResponse> sendLinkRequest(PlayerLinkRequest request) {
+    @Override
+    public CompletableFuture<LinkResult> linkPlayer(PlayerLinkRequest request) {
+        SyncConfig config = configProvider.current();
         if (!config.hasLinkSettings()) {
-            return CompletableFuture.completedFuture(new ApiResponse(0, ""));
+            return CompletableFuture.completedFuture(LinkResult.notConfigured());
         }
 
         String payload = payloadFactory.linkPayload(config.getSecretToken(), request);
-        return postJson(config.getLinkUrl(), payload, "link");
+        return postJson(config.getLinkUrl(), payload, "link").thenApply(LinkResult::from);
     }
 
     @Override
@@ -64,18 +74,23 @@ public final class DomyaApiClient implements AutoCloseable {
     }
 
     private CompletableFuture<ApiResponse> postJson(String url, String payload, String operation) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .timeout(REQUEST_TIMEOUT)
-                .header("Content-Type", "application/json; charset=utf-8")
-                .header("User-Agent", "domya-fallen-link/1.0.0 Paper")
-                .POST(HttpRequest.BodyPublishers.ofString(payload))
-                .build();
+        HttpRequest request;
+        try {
+            request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(REQUEST_TIMEOUT)
+                    .header("Content-Type", "application/json; charset=utf-8")
+                    .header("User-Agent", userAgent)
+                    .POST(HttpRequest.BodyPublishers.ofString(payload))
+                    .build();
+        } catch (IllegalArgumentException error) {
+            return CompletableFuture.completedFuture(handleError(operation, error));
+        }
 
-        if (config.isDebug()) {
+        if (configProvider.current().isDebug()) {
             logger.info(messages.get("log.api-request",
                     "{operation}", operation,
-                    "{payload}", payload));
+                    "{payload}", "[redacted]"));
         }
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
@@ -85,7 +100,7 @@ public final class DomyaApiClient implements AutoCloseable {
 
     private ApiResponse handleResponse(String operation, HttpResponse<String> response) {
         String body = response.body() == null ? "" : response.body();
-        if (config.isDebug() || response.statusCode() < 200 || response.statusCode() >= 300) {
+        if (configProvider.current().isDebug() || response.statusCode() < 200 || response.statusCode() >= 300) {
             logger.info(messages.get("log.api-response",
                     "{operation}", operation,
                     "{status}", String.valueOf(response.statusCode()),
@@ -95,9 +110,9 @@ public final class DomyaApiClient implements AutoCloseable {
     }
 
     private ApiResponse handleError(String operation, Throwable error) {
-        Throwable cause = error instanceof IOException ? error : error.getCause();
-        if (cause == null) {
-            cause = error;
+        Throwable cause = error;
+        while (cause instanceof CompletionException && cause.getCause() != null) {
+            cause = cause.getCause();
         }
         logger.log(Level.WARNING, messages.get("log.api-request-failed", "{operation}", operation), cause);
         return new ApiResponse(0, "");

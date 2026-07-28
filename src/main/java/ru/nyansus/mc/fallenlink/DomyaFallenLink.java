@@ -1,112 +1,151 @@
 package ru.nyansus.mc.fallenlink;
 
+import java.time.Clock;
+import java.time.ZoneId;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.nyansus.mc.fallenlink.api.DomyaApiClient;
 import ru.nyansus.mc.fallenlink.api.DomyaPayloadFactory;
 import ru.nyansus.mc.fallenlink.command.DomyaSyncCommand;
 import ru.nyansus.mc.fallenlink.command.LinkCommand;
-import ru.nyansus.mc.fallenlink.config.SyncConfig;
+import ru.nyansus.mc.fallenlink.config.BukkitSyncConfigProvider;
 import ru.nyansus.mc.fallenlink.listener.PlayerSyncListener;
 import ru.nyansus.mc.fallenlink.message.Messages;
 import ru.nyansus.mc.fallenlink.player.PlayerNameResolver;
+import ru.nyansus.mc.fallenlink.player.PlayerPrivacyMapper;
 import ru.nyansus.mc.fallenlink.player.PlayerSnapshotFactory;
+import ru.nyansus.mc.fallenlink.player.PlayerStatisticsCollector;
+import ru.nyansus.mc.fallenlink.player.BukkitStatisticKeyCatalog;
+import ru.nyansus.mc.fallenlink.player.StatisticReader;
+import ru.nyansus.mc.fallenlink.scheduler.BukkitTaskScheduler;
+import ru.nyansus.mc.fallenlink.scheduler.PeriodicSyncScheduler;
 import ru.nyansus.mc.fallenlink.serialization.SnapshotJsonSerializer;
 import ru.nyansus.mc.fallenlink.service.SyncService;
+import ru.nyansus.mc.fallenlink.service.SyncState;
 
 public final class DomyaFallenLink extends JavaPlugin {
 
     private DomyaApiClient apiClient;
     private Messages messages;
-    private SyncConfig syncConfig;
+    private BukkitSyncConfigProvider configProvider;
     private SyncService syncService;
-    private int periodicTaskId = -1;
+    private SyncState syncState;
+    private PeriodicSyncScheduler periodicSyncScheduler;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        reloadServices();
+        createServices();
 
-        getServer().getPluginManager().registerEvents(new PlayerSyncListener(this), this);
+        BukkitTaskScheduler taskScheduler = new BukkitTaskScheduler(this, getServer());
+        getServer().getPluginManager().registerEvents(
+                new PlayerSyncListener(configProvider, syncState, syncService, taskScheduler),
+                this
+        );
         registerCommands();
-        schedulePeriodicSync();
+        periodicSyncScheduler.reschedule();
     }
 
     @Override
     public void onDisable() {
-        cancelPeriodicSync();
+        if (periodicSyncScheduler != null) {
+            periodicSyncScheduler.close();
+        }
         if (apiClient != null) {
             apiClient.close();
         }
     }
 
-    public SyncConfig getSyncConfig() {
-        return syncConfig;
-    }
-
-    public SyncService getSyncService() {
-        return syncService;
-    }
-
-    public Messages getMessages() {
-        return messages;
-    }
-
-    public void reloadAll() {
-        reloadConfig();
+    private void reloadAll() {
+        configProvider.reload();
+        syncState.setEnabled(configProvider.current().isSyncEnabled());
         messages.reload();
-        reloadServices();
-        schedulePeriodicSync();
+        periodicSyncScheduler.reschedule();
     }
 
-    private void reloadServices() {
-        if (apiClient != null) {
-            apiClient.close();
-        }
-        syncConfig = SyncConfig.from(getConfig());
-        if (messages == null) {
-            messages = new Messages(this);
-        }
-        apiClient = new DomyaApiClient(getLogger(), messages, syncConfig, new DomyaPayloadFactory());
-        PlayerNameResolver nameResolver = new PlayerNameResolver(getServer(), messages);
-        PlayerSnapshotFactory snapshotFactory = new PlayerSnapshotFactory(nameResolver, syncConfig);
-        syncService = new SyncService(
-                this,
-                getServer(),
+    private void pauseSynchronization() {
+        configProvider.updateSyncEnabled(false);
+        syncState.setEnabled(false);
+        periodicSyncScheduler.close();
+    }
+
+    private void resumeSynchronization() {
+        configProvider.updateSyncEnabled(true);
+        syncState.setEnabled(true);
+        periodicSyncScheduler.reschedule();
+    }
+
+    private void createServices() {
+        Clock clock = Clock.systemUTC();
+        configProvider = new BukkitSyncConfigProvider(this);
+        messages = new Messages(this);
+        syncState = new SyncState(configProvider.current().isSyncEnabled());
+
+        SnapshotJsonSerializer serializer = new SnapshotJsonSerializer();
+        DomyaPayloadFactory payloadFactory = new DomyaPayloadFactory(serializer, clock);
+        apiClient = new DomyaApiClient(
                 getLogger(),
-                syncConfig,
+                messages,
+                configProvider,
+                payloadFactory,
+                getPluginMeta().getVersion()
+        );
+
+        PlayerNameResolver nameResolver = new PlayerNameResolver(getServer(), messages, configProvider);
+        PlayerPrivacyMapper privacyMapper = new PlayerPrivacyMapper();
+        PlayerStatisticsCollector statisticsCollector = new PlayerStatisticsCollector(
+                new StatisticReader(),
+                privacyMapper,
+                new BukkitStatisticKeyCatalog()
+        );
+        PlayerSnapshotFactory snapshotFactory = new PlayerSnapshotFactory(
+                nameResolver,
+                configProvider,
+                statisticsCollector,
+                privacyMapper,
+                clock,
+                ZoneId.systemDefault()
+        );
+        BukkitTaskScheduler taskScheduler = new BukkitTaskScheduler(this, getServer());
+        syncService = new SyncService(
+                getLogger(),
+                syncState,
+                configProvider,
                 messages,
                 apiClient,
+                getServer()::getOnlinePlayers,
                 nameResolver,
                 snapshotFactory,
-                new SnapshotJsonSerializer()
+                taskScheduler
+        );
+        periodicSyncScheduler = new PeriodicSyncScheduler(
+                this,
+                getServer(),
+                syncState,
+                configProvider,
+                syncService
         );
     }
 
     private void registerCommands() {
         PluginCommand syncCommand = getCommand("domyasync");
         if (syncCommand != null) {
-            syncCommand.setExecutor(new DomyaSyncCommand(this));
+            syncCommand.setExecutor(new DomyaSyncCommand(
+                    messages,
+                    syncState,
+                    configProvider,
+                    syncService,
+                    this::reloadAll,
+                    this::pauseSynchronization,
+                    this::resumeSynchronization,
+                    getPluginMeta().getVersion(),
+                    () -> getServer().getOnlinePlayers().size()
+            ));
         }
 
         PluginCommand linkCommand = getCommand("link");
         if (linkCommand != null) {
-            linkCommand.setExecutor(new LinkCommand(this));
-        }
-    }
-
-    private void schedulePeriodicSync() {
-        cancelPeriodicSync();
-        long periodTicks = Math.max(20L, syncConfig.getSyncIntervalSeconds() * 20L);
-        periodicTaskId = getServer().getScheduler()
-                .runTaskTimer(this, syncService::syncOnlinePlayers, 80L, periodTicks)
-                .getTaskId();
-    }
-
-    private void cancelPeriodicSync() {
-        if (periodicTaskId != -1) {
-            getServer().getScheduler().cancelTask(periodicTaskId);
-            periodicTaskId = -1;
+            linkCommand.setExecutor(new LinkCommand(messages, syncState, configProvider, syncService));
         }
     }
 }

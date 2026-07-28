@@ -1,5 +1,6 @@
 package ru.nyansus.mc.fallenlink.util;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -13,15 +14,15 @@ public final class TimeUtil {
     private TimeUtil() {
     }
 
-    public static String nowMysql() {
-        return MYSQL_FORMATTER.format(Instant.now().atZone(ZoneId.systemDefault()));
+    public static String nowMysql(Clock clock, ZoneId zoneId) {
+        return MYSQL_FORMATTER.format(clock.instant().atZone(zoneId));
     }
 
-    public static String mysqlFromMillis(long millis) {
-        return MYSQL_FORMATTER.format(Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()));
+    public static String mysqlFromMillis(long millis, ZoneId zoneId) {
+        return MYSQL_FORMATTER.format(Instant.ofEpochMilli(millis).atZone(zoneId));
     }
 
-    public static String nowIso() {
-        return ISO_FORMATTER.format(Instant.now().atZone(ZoneOffset.UTC));
+    public static String nowIso(Clock clock) {
+        return ISO_FORMATTER.format(clock.instant().atZone(ZoneOffset.UTC));
     }
 }

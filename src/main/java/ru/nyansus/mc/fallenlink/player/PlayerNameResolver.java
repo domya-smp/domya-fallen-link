@@ -3,20 +3,25 @@ package ru.nyansus.mc.fallenlink.player;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import ru.nyansus.mc.fallenlink.config.SyncConfig;
-import ru.nyansus.mc.fallenlink.message.Messages;
+import ru.nyansus.mc.fallenlink.config.SyncConfigProvider;
+import ru.nyansus.mc.fallenlink.message.MessageProvider;
 
-public final class PlayerNameResolver {
+public final class PlayerNameResolver implements PlayerNameProvider {
 
     private final Server server;
-    private final Messages messages;
+    private final MessageProvider messages;
+    private final SyncConfigProvider configProvider;
     private boolean placeholderWarningLogged;
 
-    public PlayerNameResolver(Server server, Messages messages) {
+    public PlayerNameResolver(Server server, MessageProvider messages, SyncConfigProvider configProvider) {
         this.server = server;
         this.messages = messages;
+        this.configProvider = configProvider;
     }
 
-    public String resolve(Player player, SyncConfig config) {
+    @Override
+    public String resolve(Player player) {
+        SyncConfig config = configProvider.current();
         if (!config.isUsePlaceholderApiName() || config.getNamePlaceholder().isEmpty()) {
             return player.getName();
         }

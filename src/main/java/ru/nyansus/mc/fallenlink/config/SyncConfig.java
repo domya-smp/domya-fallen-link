@@ -7,6 +7,7 @@ public final class SyncConfig {
     private final String apiUrl;
     private final String linkUrl;
     private final String secretToken;
+    private final boolean syncEnabled;
     private final long syncIntervalSeconds;
     private final boolean syncOnJoin;
     private final boolean syncOnQuit;
@@ -19,6 +20,7 @@ public final class SyncConfig {
             String apiUrl,
             String linkUrl,
             String secretToken,
+            boolean syncEnabled,
             long syncIntervalSeconds,
             boolean syncOnJoin,
             boolean syncOnQuit,
@@ -30,6 +32,7 @@ public final class SyncConfig {
         this.apiUrl = apiUrl;
         this.linkUrl = linkUrl;
         this.secretToken = secretToken;
+        this.syncEnabled = syncEnabled;
         this.syncIntervalSeconds = syncIntervalSeconds;
         this.syncOnJoin = syncOnJoin;
         this.syncOnQuit = syncOnQuit;
@@ -44,6 +47,7 @@ public final class SyncConfig {
                 string(config, "api-url"),
                 string(config, "link-url"),
                 string(config, "secret-token"),
+                config.getBoolean("sync-enabled", true),
                 Math.max(15L, config.getLong("sync-interval-seconds", 60L)),
                 config.getBoolean("sync-on-join", true),
                 config.getBoolean("sync-on-quit", true),
@@ -64,6 +68,10 @@ public final class SyncConfig {
 
     public String getSecretToken() {
         return secretToken;
+    }
+
+    public boolean isSyncEnabled() {
+        return syncEnabled;
     }
 
     public long getSyncIntervalSeconds() {

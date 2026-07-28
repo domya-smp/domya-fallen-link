@@ -4,22 +4,39 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import ru.nyansus.mc.fallenlink.DomyaFallenLink;
-import ru.nyansus.mc.fallenlink.message.Messages;
+import ru.nyansus.mc.fallenlink.config.SyncConfigProvider;
+import ru.nyansus.mc.fallenlink.message.MessageProvider;
+import ru.nyansus.mc.fallenlink.service.PlayerLinkUseCase;
+import ru.nyansus.mc.fallenlink.service.SyncAvailability;
 
 public final class LinkCommand implements CommandExecutor {
 
-    private final DomyaFallenLink plugin;
+    private final MessageProvider messages;
+    private final SyncAvailability syncAvailability;
+    private final SyncConfigProvider configProvider;
+    private final PlayerLinkUseCase linkUseCase;
 
-    public LinkCommand(DomyaFallenLink plugin) {
-        this.plugin = plugin;
+    public LinkCommand(
+            MessageProvider messages,
+            SyncAvailability syncAvailability,
+            SyncConfigProvider configProvider,
+            PlayerLinkUseCase linkUseCase
+    ) {
+        this.messages = messages;
+        this.syncAvailability = syncAvailability;
+        this.configProvider = configProvider;
+        this.linkUseCase = linkUseCase;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        Messages messages = plugin.getMessages();
         if (!(sender instanceof Player)) {
             sender.sendMessage(messages.get(sender, "command.player-only"));
+            return true;
+        }
+
+        if (!syncAvailability.isEnabled()) {
+            sender.sendMessage(messages.get(sender, "command.sync-paused"));
             return true;
         }
 
@@ -29,13 +46,13 @@ public final class LinkCommand implements CommandExecutor {
         }
 
         Player player = (Player) sender;
-        if (!plugin.getSyncConfig().hasLinkSettings()) {
+        if (!configProvider.current().hasLinkSettings()) {
             player.sendMessage(messages.get(player, "command.link-not-configured"));
             return true;
         }
 
         player.sendMessage(messages.get(player, "command.link-checking"));
-        plugin.getSyncService().linkPlayer(player, args[0].trim());
+        linkUseCase.linkPlayer(player, args[0].trim());
         return true;
     }
 }

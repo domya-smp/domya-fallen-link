@@ -7,6 +7,10 @@ link-url: "https://example.com/api/minecraft/link.php"
 # Shared secret token. Keep the real value only on the server.
 secret-token: "CHANGE_ME"
 
+# Master switch for all synchronization and account-link data exchange.
+# Can also be changed with /domyasync pause and /domyasync resume.
+sync-enabled: true
+
 # Automatically sync online players every N seconds.
 sync-interval-seconds: 300
 

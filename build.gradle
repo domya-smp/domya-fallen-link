@@ -10,7 +10,7 @@ checkstyle {
 }
 
 group = 'ru.nyansus.mc'
-version = '1.0.1'
+version = '1.1.0'
 
 java {
     toolchain {
@@ -52,6 +52,26 @@ jacocoTestReport {
         xml.required = true
     }
 }
+
+jacocoTestCoverageVerification {
+    dependsOn test
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.70
+            }
+            limit {
+                counter = 'BRANCH'
+                value = 'COVEREDRATIO'
+                minimum = 0.50
+            }
+        }
+    }
+}
+
+check.dependsOn jacocoTestCoverageVerification
 
 processResources {
     def props = [version: version]

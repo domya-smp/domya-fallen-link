@@ -13,14 +13,21 @@ Paper plugin for synchronizing Minecraft player data with the Domya website.
 ./gradlew build
 ```
 
-Output: `build/libs/domya-fallen-link-1.0.0.jar`
+Output: `build/libs/domya-fallen-link-1.1.0.jar`
 
 ## Commands
 
 - `/domyasync status`
 - `/domyasync reload`
 - `/domyasync sync`
+- `/domyasync pause`
+- `/domyasync resume`
 - `/link <code>`
+
+`pause` stops periodic and event-driven synchronization as well as account-link
+data exchange. The state is saved in `sync-enabled` and survives reloads and
+server restarts. The admin command remains available so synchronization can be
+resumed without reloading the plugin.
 
 ## Compatibility
 

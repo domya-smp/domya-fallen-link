@@ -5,34 +5,48 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import ru.nyansus.mc.fallenlink.DomyaFallenLink;
+import ru.nyansus.mc.fallenlink.config.SyncConfigProvider;
+import ru.nyansus.mc.fallenlink.scheduler.DelayedTaskScheduler;
+import ru.nyansus.mc.fallenlink.service.PlayerSyncUseCase;
+import ru.nyansus.mc.fallenlink.service.SyncAvailability;
 
 public final class PlayerSyncListener implements Listener {
 
-    private final DomyaFallenLink plugin;
+    private final SyncConfigProvider configProvider;
+    private final SyncAvailability syncAvailability;
+    private final PlayerSyncUseCase syncUseCase;
+    private final DelayedTaskScheduler taskScheduler;
 
-    public PlayerSyncListener(DomyaFallenLink plugin) {
-        this.plugin = plugin;
+    public PlayerSyncListener(
+            SyncConfigProvider configProvider,
+            SyncAvailability syncAvailability,
+            PlayerSyncUseCase syncUseCase,
+            DelayedTaskScheduler taskScheduler
+    ) {
+        this.configProvider = configProvider;
+        this.syncAvailability = syncAvailability;
+        this.syncUseCase = syncUseCase;
+        this.taskScheduler = taskScheduler;
     }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        if (plugin.getSyncConfig().isSyncOnJoin()) {
-            plugin.getServer().getScheduler()
-                    .runTaskLater(plugin, () -> plugin.getSyncService().syncPlayer(event.getPlayer(), true), 40L);
+        if (syncAvailability.isEnabled() && configProvider.current().isSyncOnJoin()) {
+            taskScheduler.runLater(() -> syncUseCase.syncPlayer(event.getPlayer(), true), 40L);
         }
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        if (plugin.getSyncConfig().isSyncOnQuit()) {
-            plugin.getSyncService().syncPlayer(event.getPlayer(), false);
+        if (syncAvailability.isEnabled() && configProvider.current().isSyncOnQuit()) {
+            syncUseCase.syncPlayer(event.getPlayer(), false);
         }
     }
 
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
-        plugin.getServer().getScheduler()
-                .runTaskLater(plugin, () -> plugin.getSyncService().syncPlayer(event.getEntity(), true), 40L);
+        if (syncAvailability.isEnabled()) {
+            taskScheduler.runLater(() -> syncUseCase.syncPlayer(event.getEntity(), true), 40L);
+        }
     }
 }
