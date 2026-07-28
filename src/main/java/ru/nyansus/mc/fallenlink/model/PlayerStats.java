@@ -1,11 +1,14 @@
 package ru.nyansus.mc.fallenlink.model;
 
+import java.util.Map;
+
 public final class PlayerStats {
 
     private final int playtimeSeconds;
     private final int deaths;
     private final int playerKills;
     private final int mobKills;
+    private final Map<String, Integer> mobKillsByType;
     private final int jumps;
     private final int damageDealt;
     private final int damageTaken;
@@ -23,6 +26,7 @@ public final class PlayerStats {
             int deaths,
             int playerKills,
             int mobKills,
+            Map<String, Integer> mobKillsByType,
             int jumps,
             int damageDealt,
             int damageTaken,
@@ -39,6 +43,7 @@ public final class PlayerStats {
         this.deaths = deaths;
         this.playerKills = playerKills;
         this.mobKills = mobKills;
+        this.mobKillsByType = Map.copyOf(mobKillsByType);
         this.jumps = jumps;
         this.damageDealt = damageDealt;
         this.damageTaken = damageTaken;
@@ -66,6 +71,10 @@ public final class PlayerStats {
 
     public int getMobKills() {
         return mobKills;
+    }
+
+    public Map<String, Integer> getMobKillsByType() {
+        return mobKillsByType;
     }
 
     public int getJumps() {

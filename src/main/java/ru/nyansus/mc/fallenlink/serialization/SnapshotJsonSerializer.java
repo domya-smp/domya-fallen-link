@@ -1,5 +1,6 @@
 package ru.nyansus.mc.fallenlink.serialization;
 
+import java.util.Map;
 import ru.nyansus.mc.fallenlink.model.PlayerSnapshot;
 import ru.nyansus.mc.fallenlink.model.PlayerStats;
 import ru.nyansus.mc.fallenlink.model.Position;
@@ -38,6 +39,7 @@ public final class SnapshotJsonSerializer {
         writer.field("deaths", stats.getDeaths());
         writer.field("player_kills", stats.getPlayerKills());
         writer.field("mob_kills", stats.getMobKills());
+        writeMobKillsByType(writer, stats);
         writer.field("jumps", stats.getJumps());
         writer.field("damage_dealt", stats.getDamageDealt());
         writer.field("damage_taken", stats.getDamageTaken());
@@ -49,6 +51,15 @@ public final class SnapshotJsonSerializer {
         writer.field("exp", stats.getExp());
         writer.field("health", stats.getHealth());
         writer.field("food", stats.getFood());
+        writer.endObject();
+    }
+
+    private void writeMobKillsByType(JsonWriter writer, PlayerStats stats) {
+        writer.name("mob_kills_by_type");
+        writer.beginObject();
+        for (Map.Entry<String, Integer> entry : stats.getMobKillsByType().entrySet()) {
+            writer.field(entry.getKey(), entry.getValue());
+        }
         writer.endObject();
     }
 }
